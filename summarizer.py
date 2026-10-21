@@ -50,10 +50,7 @@ class Summarizer:
         self._tstat_terminals: Optional[list[str]] = None
         self._comp_cmd: Optional[int] = None
         self._rev_valve: Optional[bool] = None
-        self._comp_pct_critical: Optional[int] = None
         self._comp_mode_critical: Optional[str] = None
-        self._heat_pct_ocommand: Optional[int] = None
-        self._cool_pct_ocommand: Optional[int] = None
         self._req_rpm: Optional[int] = None
         self._curr_rpm: Optional[int] = None
         self._comp_pct_summary: Optional[int] = None
@@ -69,7 +66,6 @@ class Summarizer:
 
         if event.kind == "critical_status":
             self._comp_mode_critical = event.data["comp"]
-            self._comp_pct_critical = event.data["comp_pct"]
             self._aux_hpct = event.data["aux_hpct"]
             self._fan_stage = max(self._fan_stage, event.data["fan_stage"])
             self._fan_stage = event.data["fan_stage"]
@@ -92,8 +88,6 @@ class Summarizer:
 
         elif event.kind == "ocommand":
             self._odu_variable = True
-            self._heat_pct_ocommand = event.data["heat_pct"]
-            self._cool_pct_ocommand = event.data["cool_pct"]
             self._req_rpm = event.data["req_rpm"]
             self._curr_rpm = event.data["curr_rpm"]
 
@@ -113,7 +107,6 @@ class Summarizer:
             self._comp_pct_summary = event.data["comp_pct"]
             if self._comp_mode_critical is None:
                 self._comp_mode_critical = event.data["comp"]
-                self._comp_pct_critical = event.data["comp_pct"]
 
         self._recompute(event.ts)
 
@@ -163,7 +156,9 @@ class Summarizer:
                 return "off"
             mode = "heat" if "B" in self._tstat_terminals else "cool"
             if self._odu_variable:
-                return f"{mode} {self._best_pct(mode)}"
+                # % omitted here -- it's redundant with the dedicated
+                # compPCT channel, which already gets its own timeline entry.
+                return mode
             stage = 2 if "Y2" in self._tstat_terminals else 1
             return f"{mode} stage{stage}"
 
@@ -173,24 +168,13 @@ class Summarizer:
                 return "off"
             mode = "heat" if self._rev_valve else "cool"
             if self._odu_variable:
-                return f"{mode} {self._best_pct(mode)}"
+                return mode
             return f"{mode} stage{self._comp_cmd}"
 
-        # Fallback: critical-line comp/compPCT only.
+        # Fallback: critical-line comp only (% handled by compPCT channel).
         if self._comp_mode_critical and self._comp_mode_critical != "off":
-            return f"{self._comp_mode_critical} {self._comp_pct_critical}%"
+            return self._comp_mode_critical
         return "off"
-
-    def _best_pct(self, mode: str) -> str:
-        """Prefer OCOMMAND's HCMD/CCMD (confirmed authoritative) over the
-        critical line's compPCT when available."""
-        if mode == "heat" and self._heat_pct_ocommand is not None:
-            return f"{self._heat_pct_ocommand}%"
-        if mode == "cool" and self._cool_pct_ocommand is not None:
-            return f"{self._cool_pct_ocommand}%"
-        if self._comp_pct_critical is not None:
-            return f"{self._comp_pct_critical}%"
-        return "?%"
 
     def _compressor_detail(self) -> str:
         """OCOMMAND's req/curr RPM, shown alongside the compressor timeline
