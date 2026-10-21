@@ -17,6 +17,7 @@ Design notes (from log analysis):
     are not confirmed, so no on/off claim is made for them.
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Iterable, Optional
@@ -226,6 +227,22 @@ class Summarizer:
         return "off"
 
 
+CHANNEL_ORDER = ["fan", "compressor", "compPCT", "secondary_heat", "auxHPCT"]
+
+_TRAILING_NUM_RE = re.compile(r"(-?\d+)(?!.*\d)")
+
+
+def _value_sort_key(value: str) -> tuple:
+    """Order values low-to-high within a channel: 'off' first, then
+    numerically by the trailing number (handles '10%', 'stage2',
+    'cool 50%', etc.)."""
+    if value == "off":
+        return (0, 0, value)
+    m = _TRAILING_NUM_RE.search(value)
+    num = int(m.group(1)) if m else 0
+    return (1, num, value)
+
+
 def summarize(events: Iterable[Event]) -> SummaryResult:
     s = Summarizer()
     for event in events:
@@ -246,9 +263,15 @@ def format_report(result: SummaryResult) -> str:
     lines.append("=== Totals ===")
     if not result.totals:
         lines.append("(nothing engaged)")
-    for channel, values in result.totals.items():
+    channels = sorted(
+        result.totals,
+        key=lambda c: CHANNEL_ORDER.index(c) if c in CHANNEL_ORDER else len(CHANNEL_ORDER),
+    )
+    for channel in channels:
+        values = result.totals[channel]
         lines.append(f"{channel}:")
-        for value, dur in values.items():
+        for value in sorted(values, key=_value_sort_key):
+            dur = values[value]
             count = result.counts.get(channel, {}).get(value, 0)
             lines.append(f"  {value}: engaged {count}x, total {dur}")
 
