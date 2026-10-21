@@ -148,6 +148,7 @@ class Summarizer:
         self._set("fan", self._fan_value(), ts)
         self._set("compressor", self._compressor_value(), ts, detail=self._compressor_detail())
         self._set("compPCT", self._comp_pct_commanded_value(), ts)
+        self._set("auxHPCT", self._aux_hpct_value(), ts)
         self._set("secondary_heat", self._secondary_heat_value(), ts)
 
     def _fan_value(self) -> str:
@@ -207,6 +208,15 @@ class Summarizer:
         if self._comp_mode_summary is None or self._comp_mode_summary == "off":
             return "off"
         return f"{self._comp_pct_summary}%"
+
+    def _aux_hpct_value(self) -> str:
+        """Raw `auxHPCT:N` from the `[Critical]` status line, tracked as its
+        own channel so every change gets its own timeline entry -- same
+        pattern as `compPCT`, independent of the `secondary_heat` channel,
+        which also folds in `heat_cmd` and only reports a derived on/off%."""
+        if self._aux_hpct is None or self._aux_hpct <= 0:
+            return "off"
+        return f"{self._aux_hpct}%"
 
     def _secondary_heat_value(self) -> str:
         if self._heat_cmd:
