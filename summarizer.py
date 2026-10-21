@@ -55,8 +55,11 @@ class Summarizer:
         self._cool_pct_ocommand: Optional[int] = None
         self._req_rpm: Optional[int] = None
         self._curr_rpm: Optional[int] = None
+<<<<<<< HEAD
         self._comp_pct_summary: Optional[int] = None
         self._comp_mode_summary: Optional[str] = None
+=======
+>>>>>>> origin/main
         self._heat_cmd: Optional[int] = None
         self._aux_hpct: Optional[int] = None
         self._fan_stage: int = 0
@@ -104,12 +107,15 @@ class Summarizer:
 
         elif event.kind == "summary":
             self._fan_stage = event.data["fan_stage"]
+<<<<<<< HEAD
             # CompPCT here is the UI-driven commanded %, tracked as its own
             # channel (see _comp_pct_commanded_value) since it can change
             # independently of -- and more often than -- the OCOMMAND-derived
             # compressor state that's used for engagement/stage determination.
             self._comp_mode_summary = event.data["comp"]
             self._comp_pct_summary = event.data["comp_pct"]
+=======
+>>>>>>> origin/main
             if self._comp_mode_critical is None:
                 self._comp_mode_critical = event.data["comp"]
                 self._comp_pct_critical = event.data["comp_pct"]
@@ -147,7 +153,10 @@ class Summarizer:
     def _recompute(self, ts: Optional[datetime]) -> None:
         self._set("fan", self._fan_value(), ts)
         self._set("compressor", self._compressor_value(), ts, detail=self._compressor_detail())
+<<<<<<< HEAD
         self._set("compPCT", self._comp_pct_commanded_value(), ts)
+=======
+>>>>>>> origin/main
         self._set("secondary_heat", self._secondary_heat_value(), ts)
 
     def _fan_value(self) -> str:
@@ -198,6 +207,7 @@ class Summarizer:
             return f" (OCOMMAND req={self._req_rpm},curr:{self._curr_rpm})"
         return ""
 
+<<<<<<< HEAD
     def _comp_pct_commanded_value(self) -> str:
         """UI-commanded % from the `hvacCommand Comp:/CompPCT=` summary
         line, tracked as its own channel so every change gets its own
@@ -208,6 +218,8 @@ class Summarizer:
             return "off"
         return f"{self._comp_pct_summary}%"
 
+=======
+>>>>>>> origin/main
     def _secondary_heat_value(self) -> str:
         if self._heat_cmd:
             return f"{self._heat_cmd}%"

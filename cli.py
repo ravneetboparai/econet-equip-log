@@ -20,12 +20,18 @@ from parser import parse_line
 from summarizer import format_report, summarize
 
 
+<<<<<<< HEAD
 LOG_DIR = Path("logs")
 
 
 def _default_outfile() -> Path:
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     return LOG_DIR / f"ecobee_cpss_{ts}.log"
+=======
+def _default_outfile() -> Path:
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return Path(f"ecobee_cpss_{ts}.log")
+>>>>>>> origin/main
 
 
 def parse_args(argv=None) -> argparse.Namespace:
@@ -43,7 +49,11 @@ def parse_args(argv=None) -> argparse.Namespace:
     )
     p.add_argument(
         "--outfile", type=Path, default=None,
+<<<<<<< HEAD
         help="Path to save raw log lines (default: timestamped file under ./logs)",
+=======
+        help="Path to save raw log lines (default: timestamped file in cwd)",
+>>>>>>> origin/main
     )
     p.add_argument(
         "--duration", type=float, default=None,
@@ -54,7 +64,10 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 def collect(args: argparse.Namespace) -> Path:
     outfile = args.outfile or _default_outfile()
+<<<<<<< HEAD
     outfile.parent.mkdir(parents=True, exist_ok=True)
+=======
+>>>>>>> origin/main
     adb_serial = args.adb if args.adb else None
     ssh_target = args.ssh
 
